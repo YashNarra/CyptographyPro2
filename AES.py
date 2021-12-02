@@ -42,6 +42,10 @@ class AES(object):
 
     # Add RoundKey
     def ARK(self, key, msg):
+        m, n = len(msg), len(msg[0])
+        for i in range(m):
+            for j in range(n):
+                msg[i][j] = key[i][j] ^ msg[i][j]
         return msg
 
     # ByteSub transformation
