@@ -7,6 +7,8 @@
 @description:
 AES encryption system, 128 bit key, 10 rounds.
 """
+import numpy as np
+
 from CommonMethod import group_input_text
 
 
@@ -89,11 +91,13 @@ class AES(object):
 
     # MixColumn
     def MC(self, msg):
-        M = []
-        pass
+        M = np.array(
+            [[0x02, 0x03, 0x01, 0x01], [0x01, 0x02, 0x03, 0x01], [0x01, 0x01, 0x02, 0x03], [0x03, 0x01, 0x01, 0x02]])
+        sr_msg = np.array(msg)
+        return np.matmul(M, sr_msg)
 
     def KS(self, key):
-        pass
+
         return key
 
 
