@@ -105,7 +105,7 @@ class AES(object):
              [[0, 1], [0, 1], [1, 0], [1, 1]],
              [[1, 1], [0, 1], [0, 1], [1, 0]]]
         C = []
-        #Coverting reesult from SR to polynomial
+        #Coverting result from SR to polynomial
         for i in msg:
             for j in range(len(i)):
                 i[j] = bin(int(i[j]))
