@@ -99,10 +99,40 @@ class AES(object):
 
     # MixColumn
     def MC(self, msg):
-        M = np.array(
-            [[0x02, 0x03, 0x01, 0x01], [0x01, 0x02, 0x03, 0x01], [0x01, 0x01, 0x02, 0x03], [0x03, 0x01, 0x01, 0x02]])
-        sr_msg = np.array(msg)
-        return np.matmul(M, sr_msg)
+        #Constant matrix
+        M = [[[1, 0], [1, 1], [0, 1], [0, 1]],
+             [[0, 1], [1, 0], [1, 1], [0, 1]],
+             [[0, 1], [0, 1], [1, 0], [1, 1]],
+             [[1, 1], [0, 1], [0, 1], [1, 0]]]
+        C = []
+        #Coverting reesult from SR to polynomial
+        for i in msg:
+            for j in range(len(i)):
+                i[j] = bin(int(i[j]))
+                i[j] = str(i[j]).split('b')
+                C.append(list(i[j][1]))
+        for i in range(len(C)):
+            C[i] = list(map(int, C[i]))
+            C[i] = np.poly1d(C[i])
+        C_four = [C[i:i + 4] for i in range(0, len(C), 4)]
+        #Coverting contsant matrix to poly
+        for i in M:
+            for j in range(len(i)):
+                i[j] = np.poly1d(i[j])
+
+        res = [[0, 0, 0, 0],
+               [0, 0, 0, 0],
+               [0, 0, 0, 0],
+               [0, 0, 0, 0]]
+
+        #Matrix Multiplication
+        for i in range(len(M)):
+            for j in range(len(C_four[0])):
+                for k in range(len(C_four)):
+
+                    res[i][j] += M[i][k] * C_four[k][j]
+                    l = np.polydiv(res[i][j], np.poly1d([1, 0, 0, 0, 1, 1, 0, 1, 1]))
+       # return l[1]
 
     # Key Schedule
     def KS(self, key, i):
