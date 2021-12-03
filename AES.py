@@ -9,7 +9,7 @@ AES encryption system, 128 bit key, 10 rounds.
 """
 import numpy as np
 
-from CommonMethod import group_input_text
+from CommonMethod import group_input_text, decimal_conversion, str_conversion, bit_xor_operation
 
 
 class AES(object):
@@ -22,20 +22,20 @@ class AES(object):
         return cls.__instance
 
     def __init__(self, original_key, plain_text):
-        self.original_key = original_key
+        self.original_key = group_input_text(original_key)
         self.plain_text = group_input_text(plain_text)
 
     def __str__(self):
-        pass
+        return "AES 128 bit key, 10 rounds encryption system."
 
     def encryption(self):
-        key = self.KS(key=self.original_key)
+        key = self.KS(key=self.original_key, i=self.round)
         ark_msg = self.ARK(key=self.original_key, msg=self.plain_text)
         self.round += 1
         while self.round <= 10:
             if self.round != 10:
                 ark_msg = self.ARK(key=key, msg=self.MC(msg=self.SR(msg=self.BS(msg=ark_msg))))
-                key = self.KS(key)
+                key = self.KS(key, i=self.round)
             else:
                 ark_msg = self.ARK(key=key, msg=self.SR(msg=self.BS(msg=ark_msg)))
             self.round += 1
@@ -47,11 +47,11 @@ class AES(object):
         m, n = len(msg), len(msg[0])
         for i in range(m):
             for j in range(n):
-                msg[i][j] = key[i][j] ^ msg[i][j]
+                msg[i][j] = bit_xor_operation(key[i][j], msg[i][j], batch=False)
         return msg
 
     # ByteSub transformation
-    def BS(self, msg):
+    def BS(self, msg, matrix=True):
         s_box = [
             [0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76],
             [0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0],
@@ -70,13 +70,21 @@ class AES(object):
             [0xE1, 0xF8, 0x98, 0x11, 0x69, 0xD9, 0x8E, 0x94, 0x9B, 0x1E, 0x87, 0xE9, 0xCE, 0x55, 0x28, 0xDF],
             [0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16]
         ]
-        m, n = len(msg), len(msg[0])
-        len_index = len(msg[0][0]) // 2
-        new_msg = [[None for _ in range(m)] for _ in range(n)]
-        for i in range(m):
-            for j in range(n):
-                _index = msg[i][j]
-                new_msg[i][j] = s_box[int(_index[:len_index], 16)][int(_index[len_index:], 16)]
+        if matrix:
+            m, n = len(msg), len(msg[0])
+            len_index = len(msg[0][0]) // 2
+            new_msg = [[None for _ in range(m)] for _ in range(n)]
+            for i in range(m):
+                for j in range(n):
+                    _index = msg[i][j]
+                    new_msg[i][j] = s_box[int(_index[:len_index], 16)][int(_index[len_index:], 16)]
+        else:
+            n = len(msg)
+            len_index = len(msg[0]) // 2
+            new_msg = [None] * n
+            for i in range(n):
+                _index = msg[i]
+                new_msg[i] = s_box[int(_index[:len_index], 16)][int(_index[len_index:], 16)]
         return new_msg
 
     # ShiftRow Transformation
@@ -96,9 +104,17 @@ class AES(object):
         sr_msg = np.array(msg)
         return np.matmul(M, sr_msg)
 
-    def KS(self, key):
-
-        return key
+    # Key Schedule
+    def KS(self, key, i):
+        w0, w1, w2, w3 = key[0], key[1], key[2], key[3]
+        Tw3 = self.BS(w3[1:] + w3[0], matrix=False)
+        ri = bin(pow(2, i - 1))
+        Tw3[0] = bit_xor_operation(Tw3[0], ri, batch=False)
+        new_w0 = bit_xor_operation(w0, Tw3)
+        new_w1 = bit_xor_operation(w1, new_w0)
+        new_w2 = bit_xor_operation(w2, new_w1)
+        new_w3 = bit_xor_operation(w3, new_w2)
+        return [new_w0, new_w1, new_w2, new_w3]
 
 
 if __name__ == "__main__":

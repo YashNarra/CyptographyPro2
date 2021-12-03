@@ -9,6 +9,38 @@ Common method collection.
 """
 
 
+def decimal_conversion(decimal, binary=False, batch=True):
+    """
+    Convert decimal to binary or hexadecimal.
+    :param decimal: [str] or [list] decimal to be converted.
+    :param binary: [boolean] if convert to binary it is True otherwise if False, default value is False.
+    :param batch: [boolean] convert only a number or a list of numbers, default value is True.
+    :return: [str] or [list] converted number.
+    """
+    if batch:
+        if binary:
+            return [bin(d) for d in decimal]
+        else:
+            return [hex(d) for d in decimal]
+    else:
+        return bin(decimal) if binary else hex(decimal)
+
+
+def str_conversion(decimal, binary=False, batch=True):
+    """
+    Convert str to binary or hexadecimal.
+    :param decimal: [str] or [list] decimal to be converted.
+    :param binary: [boolean] if convert to binary it is True otherwise if False, default value is False.
+    :param batch: [boolean] convert only a number or a list of numbers, default value is True.
+    :return: [str] or [list] converted str.
+    """
+    prefix = "0b" if binary else "0x"
+    if batch:
+        return [hex(prefix + d) for d in decimal]
+    else:
+        return prefix + decimal
+
+
 def group_input_text(text, size=4):
     """
     Convert 128 bits input to 16 bytes of 8 bits.
@@ -32,10 +64,24 @@ def bin_to_poly(bin_item, poly_degree=8):
     return [i for i in range(poly_degree) if bin_item[::-1][i] == "1"]
 
 
+def bit_xor_operation(a, b, batch=True):
+    """
+    Bit wise xor operation between two decimal/hexadecimal.
+    :param a: [int]
+    :param b: [int]
+    :param batch: [boolean] convert only a number or a list of numbers, default value is True.
+    :return: [int] binary result.
+    """
+    if batch:
+        return [bin(a[i]).spilt("b")[-1] ^ bin(b[i]).spilt("b")[-1] for i in range(len(a))]
+    else:
+        return bin(a).spilt("b")[-1] ^ bin(b).spilt("b")[-1]
+
+
 if __name__ == "__main__":
-    # text = "00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff"
-    # print(group_input_text(text))
+    text = "00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff"
+    print(group_input_text(text))
 
     # bin_item = "00000011"
-    bin_item = '0b1100011'
-    print(bin_to_poly(bin_item))
+    # bin_item = '0b1100011'
+    # print(bin_to_poly(bin_item))
