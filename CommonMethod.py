@@ -48,7 +48,8 @@ def group_input_text(text, size=4):
     :param size: [int] default value is 4.
     :return: [2-D list] converted text.
     """
-    text = text.split()
+    if isinstance(text, str):
+        text = text.split()
     return [text[i:i+size] for i in range(0, len(text), size)]
 
 
@@ -73,9 +74,11 @@ def bit_xor_operation(a, b, batch=True):
     :return: [int] binary result.
     """
     if batch:
-        return [bin(a[i]).spilt("b")[-1] ^ bin(b[i]).spilt("b")[-1] for i in range(len(a))]
+        return [bin(a[i] ^ b[i]).count("1") for i in range(len(a))]
+        # return [bin(a[i]).split("b")[-1] ^ bin(b[i]).split("b")[-1] for i in range(len(a))]
     else:
-        return bin(a).spilt("b")[-1] ^ bin(b).spilt("b")[-1]
+        return bin(a ^ b).count("1")
+        # return bin(a).split("b")[-1] ^ bin(b).split("b")[-1]
 
 
 if __name__ == "__main__":

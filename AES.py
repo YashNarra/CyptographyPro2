@@ -50,6 +50,7 @@ class AES(object):
                 msg[i][j] = bit_xor_operation(key[i][j], msg[i][j], batch=False)
         return msg
 
+    # TEST PASS
     # ByteSub transformation
     def BS(self, msg, matrix=True):
         s_box = [
@@ -72,21 +73,28 @@ class AES(object):
         ]
         if matrix:
             m, n = len(msg), len(msg[0])
-            len_index = len(msg[0][0]) // 2
             new_msg = [[None for _ in range(m)] for _ in range(n)]
             for i in range(m):
                 for j in range(n):
-                    _index = msg[i][j]
-                    new_msg[i][j] = s_box[int(_index[:len_index], 16)][int(_index[len_index:], 16)]
+                    len_index = len(msg[i][j]) // 2
+                    if len_index < 1:
+                        x, y = 0, msg[i][j]
+                    else:
+                        x, y = int(str(msg[i][j])[:len_index], 16), int(str(msg[i][j])[len_index:], 16)
+                    new_msg[i][j] = s_box[x][y]
         else:
             n = len(msg)
-            len_index = len(msg[0]) // 2
             new_msg = [None] * n
             for i in range(n):
-                _index = msg[i]
-                new_msg[i] = s_box[int(_index[:len_index], 16)][int(_index[len_index:], 16)]
+                len_index = len(str(msg[i])) // 2
+                if len_index < 1:
+                    x, y = 0, msg[i]
+                else:
+                    x, y = int(str(msg[i])[:len_index], 16), int(str(msg[i])[len_index:], 16)
+                new_msg[i] = s_box[x][y]
         return new_msg
 
+    # TEST PASS
     # ShiftRow Transformation
     def SR(self, msg):
         m, n = len(msg), len(msg[0])
@@ -134,21 +142,43 @@ class AES(object):
                     l = np.polydiv(res[i][j], np.poly1d([1, 0, 0, 0, 1, 1, 0, 1, 1]))
        # return l[1]
 
+    # OUTPUT INCORRECT
     # Key Schedule
     def KS(self, key, i):
-        w0, w1, w2, w3 = key[0], key[1], key[2], key[3]
-        Tw3 = self.BS(w3[1:] + w3[0], matrix=False)
-        ri = bin(pow(2, i - 1))
-        Tw3[0] = bit_xor_operation(Tw3[0], ri, batch=False)
-        new_w0 = bit_xor_operation(w0, Tw3)
+        print(f"key: {key}, i: {i}")
+        m, n = len(key), len(key[0])
+        w = [[None for _ in range(n)] for _ in range(m)]
+        for i in range(m):
+            for j in range(n):
+                w[i][j] = key[j][i]
+        w0, w1, w2, w3 = w[0], w[1], w[2], w[3]
+        print(f"w0: {w0}, w1: {w1}, w2: {w2}, w3: {w3}")
+        w3 = [x % 8 for x in w3]
+        w3 = w3[1:] + [w3[0]]
+        print(f"new_w3: {w3}")
+        w3 = self.BS(w3[1:] + [w3[0]], matrix=False)
+        print(f"Tw3: {w3}")
+        w3[0] = bit_xor_operation(w3[0], pow(2, i - 1) % 8, batch=False)
+        print(f"Tw3: {w3}")
+        new_w0 = bit_xor_operation(w0, w3)
+        print(f"new_w0: {new_w0}")
         new_w1 = bit_xor_operation(w1, new_w0)
+        print(f"new_w1: {new_w1}")
         new_w2 = bit_xor_operation(w2, new_w1)
+        print(f"new_w2: {new_w2}")
         new_w3 = bit_xor_operation(w3, new_w2)
+        print(f"new_w3: {new_w3}")
         return [new_w0, new_w1, new_w2, new_w3]
 
 
 if __name__ == "__main__":
-    plain_text = "00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff"
-    original_key = "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
+    # plain_text = "00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff"
+    # original_key = "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
+    plain_text = [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
+    original_key = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f]
     obj = AES(original_key, plain_text)
+    print(obj.KS(key=group_input_text(original_key), i=1))
+    # print(obj.ARK(key=group_input_text(original_key), msg=group_input_text(plain_text)))
+    print(plain_text)
+    # print(obj.SR(msg=group_input_text(plain_text)))
     # print(obj.BS())
