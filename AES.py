@@ -8,8 +8,7 @@
 AES encryption system, 128 bit key, 10 rounds.
 """
 import numpy as np
-
-from CommonMethod import group_input_text, decimal_conversion, str_conversion, bit_xor_operation
+from CommonMethod import *
 
 
 class AES(object):
@@ -24,30 +23,38 @@ class AES(object):
     def __init__(self, original_key, plain_text):
         self.original_key = group_input_text(original_key)
         self.plain_text = group_input_text(plain_text)
+        self.keys = []
+        self.output = []
 
     def __str__(self):
         return "AES 128 bit key, 10 rounds encryption system."
 
     def encryption(self):
         key = self.KS(key=self.original_key, i=self.round)
-        ark_msg = self.ARK(key=self.original_key, msg=self.plain_text)
+        ark_msg = self.ARK(key=key, msg=self.plain_text)
+        self.keys.append([key])
+        self.output.append([ark_msg])
         self.round += 1
         while self.round <= 10:
             if self.round != 10:
-                ark_msg = self.ARK(key=key, msg=self.MC(msg=self.SR(msg=self.BS(msg=ark_msg))))
                 key = self.KS(key, i=self.round)
+                ark_msg = self.ARK(key=key, msg=self.MC(msg=self.SR(msg=self.BS(msg=ark_msg))))
             else:
                 ark_msg = self.ARK(key=key, msg=self.SR(msg=self.BS(msg=ark_msg)))
+            self.keys.append([key])
+            self.output.append([ark_msg])
             self.round += 1
 
         return ark_msg
 
     # Add RoundKey
     def ARK(self, key, msg):
-        m, n = len(msg), len(msg[0])
-        for i in range(m):
+        n = len(msg)
+        for i in range(n):
             for j in range(n):
-                msg[i][j] = bit_xor_operation(key[i][j], msg[i][j], batch=False)
+                for k in range(n):
+                    msg[i][j] += bit_xor_operation(msg[i][k], key[k][j], batch=False)
+                    # msg[i][j] %= 8
         return msg
 
     # TEST PASS
@@ -107,13 +114,13 @@ class AES(object):
 
     # MixColumn
     def MC(self, msg):
-        #Constant matrix
+        # Constant matrix
         M = [[[1, 0], [1, 1], [0, 1], [0, 1]],
              [[0, 1], [1, 0], [1, 1], [0, 1]],
              [[0, 1], [0, 1], [1, 0], [1, 1]],
              [[1, 1], [0, 1], [0, 1], [1, 0]]]
         C = []
-        #Coverting result from SR to polynomial
+        # Coverting result from SR to polynomial
         for i in msg:
             for j in range(len(i)):
                 i[j] = bin(int(i[j]))
@@ -123,7 +130,7 @@ class AES(object):
             C[i] = list(map(int, C[i]))
             C[i] = np.poly1d(C[i])
         C_four = [C[i:i + 4] for i in range(0, len(C), 4)]
-        #Coverting contsant matrix to poly
+        # Coverting contsant matrix to poly
         for i in M:
             for j in range(len(i)):
                 i[j] = np.poly1d(i[j])
@@ -133,25 +140,30 @@ class AES(object):
                [0, 0, 0, 0],
                [0, 0, 0, 0]]
 
-        #Matrix Multiplication
+        # Matrix Multiplication
         for i in range(len(M)):
             for j in range(len(C_four[0])):
                 for k in range(len(C_four)):
-
                     res[i][j] += M[i][k] * C_four[k][j]
                     l = np.polydiv(res[i][j], np.poly1d([1, 0, 0, 0, 1, 1, 0, 1, 1]))
-       # return l[1]
+    # return l[1]
 
     # OUTPUT INCORRECT
     # Key Schedule
     def KS(self, key, i):
         print(f"key: {key}, i: {i}")
         m, n = len(key), len(key[0])
-        w = [[None for _ in range(n)] for _ in range(m)]
-        for i in range(m):
-            for j in range(n):
-                w[i][j] = key[j][i]
-        w0, w1, w2, w3 = w[0], w[1], w[2], w[3]
+        # Round 0 Key
+        if i == 0:
+            w = [[None for _ in range(n)] for _ in range(m)]
+            for j in range(m):
+                for k in range(n):
+                    w[j][k] = key[k][j]
+            w0, w1, w2, w3 = w[0], w[1], w[2], w[3]
+            print(f"Round 0 key: {[w0, w1, w2, w3]}\n")
+            return [w0, w1, w2, w3]
+
+        w0, w1, w2, w3 = key
         print(f"w0: {w0}, w1: {w1}, w2: {w2}, w3: {w3}")
         w3 = [x % 8 for x in w3]
         w3 = w3[1:] + [w3[0]]
@@ -176,9 +188,19 @@ if __name__ == "__main__":
     # original_key = "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
     plain_text = [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
     original_key = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f]
+    print(f"plain_text: {plain_text}\noriginal_key: {original_key}\n")
     obj = AES(original_key, plain_text)
-    print(obj.KS(key=group_input_text(original_key), i=1))
-    # print(obj.ARK(key=group_input_text(original_key), msg=group_input_text(plain_text)))
-    print(plain_text)
+    # print(obj.KS(key=group_input_text(original_key), i=1))
+    ark_msg = obj.ARK(key=obj.KS(key=group_input_text(original_key), i=0), msg=group_input_text(plain_text))
+    print(ark_msg)
+    decimal_ark, hex_ark = [], []
+    for i in range(4):
+        for j in range(4):
+            decimal_ark.append(ark_msg[i][j] % 8)
+            hex_ark.append(hex(ark_msg[i][j]))
+            # print("decimal" + str(ark_msg[i][j] % 8))
+            # print("hex" + str(hex(ark_msg[i][j] % 8)))
+    print(f"decimal_ark: {decimal_ark}\nhex_ark: {hex_ark}\n")
+
     # print(obj.SR(msg=group_input_text(plain_text)))
     # print(obj.BS())
