@@ -82,7 +82,7 @@ class AES(object):
             new_msg = [[None for _ in range(m)] for _ in range(n)]
             for i in range(m):
                 for j in range(n):
-                    len_index = len(msg[i][j]) // 2
+                    len_index = len(str(msg[i][j])) // 2
                     if len_index < 1:
                         x, y = 0, msg[i][j]
                     else:
@@ -132,7 +132,7 @@ class AES(object):
     # Key Schedule
     def KS(self, key, i):
         print(f"key: {key}, i: {i}")
-        m, n = len(key), len(key[0])
+        # m, n = len(key), len(key[0])
         # # Round 0 Key
         # if i == 0:
         #     w = [[None for _ in range(n)] for _ in range(m)]
@@ -146,12 +146,20 @@ class AES(object):
         w0, w1, w2, w3 = key
         print(f"w0: {w0}, w1: {w1}, w2: {w2}, w3: {w3}")
         w3 = [x % 8 for x in w3]
+        print(f"after mod in GF(2^8) w(4i - 1)/w3: {w3}")
+
         w3 = w3[1:] + [w3[0]]
-        print(f"new_w3: {w3}")
-        w3 = self.BS(w3[1:] + [w3[0]], matrix=False)
-        print(f"Tw3: {w3}")
-        w3[0] = bit_xor_operation(w3[0], pow(2, i - 1) % 8, batch=False)
-        print(f"Tw3: {w3}")
+        print(f"after shift cyclically w3: {w3}")
+
+        w3 = self.BS(w3, matrix=False)
+        print(f"after pass to the S-Box w3: {w3}")
+
+        r = pow(2, i - 1) % 8
+        print(f"compute r: {r}")
+
+        w3[0] = bit_xor_operation(w3[0], r, batch=False)
+        print(f"after perform e XOR r, w3: {w3}")
+
         new_w0 = bit_xor_operation(w0, w3)
         print(f"new_w0: {new_w0}")
         new_w1 = bit_xor_operation(w1, new_w0)
@@ -164,29 +172,33 @@ class AES(object):
 
 
 if __name__ == "__main__":
-    # plain_text = "00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff"
-    # original_key = "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
+    def get_hex_msg(msg):
+        s1 = []
+        for a, b, c, d in msg:
+            s1 += [a, b, c, d]
+        s1 = [hex(x) for x in s1]
+        print(f"hex ark msg: {s1}")
+        return s1
+
     plain_text = [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
     original_key = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f]
-    print(f"plain_text: {group_input_text(plain_text)}\noriginal_key: {original_key}\n")
+    # print(f"plain_text: {group_input_text(plain_text)}\noriginal_key: {original_key}\n")
     obj = AES(original_key, plain_text)
-    # print(obj.KS(key=group_input_text(original_key), i=1))
-    ark_msg = obj.ARK(key=obj.KS(key=group_input_text(original_key), i=0), msg=group_input_text(plain_text))
-    print(f"ark_msg: {ark_msg}")
-    s1 = []
-    for a, b, c, d in ark_msg:
-        s1 += [a, b, c, d]
-    s1 = [hex(x) for x in s1]
-    print(f"s1: {s1}")
-    # decimal_ark, hex_ark = [], []
-    # for i in range(4):
-    #     for j in range(4):
-    #         decimal_ark.append(ark_msg[i][j] % 8)
-    #         hex_ark.append(hex(ark_msg[i][j]))
-    #         # print("decimal" + str(ark_msg[i][j] % 8))
-    #         # print("hex" + str(hex(ark_msg[i][j] % 8)))
-    # print(f"decimal_ark: {decimal_ark}\nhex_ark: {hex_ark}\n")
 
-    # print(obj.SR(msg=group_input_text(plain_text)))
-    # print(obj.BS())
+    # ROUND 0
+    key = group_input_text(original_key)
+    # print(f"ROUND 0 key: {get_hex_msg(key)}")
+    ark_msg = group_input_text(plain_text)
+    ark_msg = obj.ARK(key=key, msg=ark_msg)
+    # print(f"ROUND 0 ark_msg: {get_hex_msg(ark_msg)}")
+    # print("*****************\n")
+
+    # ROUND 1
+    key = obj.KS(key=key, i=1)
+    print(f"ROUND 1 key: {get_hex_msg(key)}")
+    # bs_msg = obj.BS(msg=ark_msg)
+    # print(f"ROUND 1 bs_msg: {bs_msg}")
+
+
+
 
