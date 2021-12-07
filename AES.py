@@ -24,12 +24,12 @@ class AES(object):
         self.plain_text = group_input_text(plain_text)
         self.keys = []
         self.output = []
+        self.mod = pow(2, 8)
 
     def __str__(self):
         return "AES 128 bit key, 10 rounds encryption system."
 
     def encryption(self):
-        # key = self.KS(key=self.original_key, i=self.round)
         key = self.original_key
         ark_msg = self.ARK(key=key, msg=self.plain_text)
         self.keys.append([key])
@@ -82,21 +82,26 @@ class AES(object):
             new_msg = [[None for _ in range(m)] for _ in range(n)]
             for i in range(m):
                 for j in range(n):
+                    msg[i][j] = hex(msg[i][j])[2:]
                     len_index = len(str(msg[i][j])) // 2
                     if len_index < 1:
-                        x, y = 0, msg[i][j]
+                        x, y = 0, int(msg[i][j], 16)
                     else:
                         x, y = int(str(msg[i][j])[:len_index], 16), int(str(msg[i][j])[len_index:], 16)
+                    # print(f"x, y: {x}, {y}")
                     new_msg[i][j] = s_box[x][y]
         else:
             n = len(msg)
             new_msg = [None] * n
             for i in range(n):
+                msg[i] = hex(msg[i])[2:]
+                # print(f"msg[i]: {msg[i]}")
                 len_index = len(str(msg[i])) // 2
                 if len_index < 1:
-                    x, y = 0, msg[i]
+                    x, y = 0, int(msg[i], 16)
                 else:
                     x, y = int(str(msg[i])[:len_index], 16), int(str(msg[i])[len_index:], 16)
+                # print(f"hex x, y: {x}, {y}")
                 new_msg[i] = s_box[x][y]
         return new_msg
 
@@ -126,59 +131,28 @@ class AES(object):
                                      bin_to_poly_coefficient(bin(msg[k][j]))[::-1])
                     _, value = poly_div(a=coefficient_to_int(value))
                     new_msg[i][j] += value
+                    new_msg[i][j] %= self.mod
         return new_msg
 
-    # OUTPUT INCORRECT
+    # TEST PASS
     # Key Schedule
     def KS(self, key, i):
-        print(f"key: {key}, i: {i}")
-        # m, n = len(key), len(key[0])
-        # # Round 0 Key
-        # if i == 0:
-        #     w = [[None for _ in range(n)] for _ in range(m)]
-        #     for j in range(m):
-        #         for k in range(n):
-        #             w[j][k] = key[k][j]
-        #     w0, w1, w2, w3 = w[0], w[1], w[2], w[3]
-        #     print(f"Round 0 key: {[w0, w1, w2, w3]}\n")
-        #     return [w0, w1, w2, w3]
-
         w0, w1, w2, w3 = key
-        print(f"w0: {w0}, w1: {w1}, w2: {w2}, w3: {w3}")
-        w3 = [x % 8 for x in w3]
-        print(f"after mod in GF(2^8) w(4i - 1)/w3: {w3}")
-
+        original_w3 = w3
+        w3 = [x % self.mod for x in w3]
         w3 = w3[1:] + [w3[0]]
-        print(f"after shift cyclically w3: {w3}")
-
         w3 = self.BS(w3, matrix=False)
-        print(f"after pass to the S-Box w3: {w3}")
-
         r = pow(2, i - 1) % 8
-        print(f"compute r: {r}")
-
         w3[0] = bit_xor_operation(w3[0], r, batch=False)
-        print(f"after perform e XOR r, w3: {w3}")
-
         new_w0 = bit_xor_operation(w0, w3)
-        print(f"new_w0: {new_w0}")
         new_w1 = bit_xor_operation(w1, new_w0)
-        print(f"new_w1: {new_w1}")
         new_w2 = bit_xor_operation(w2, new_w1)
-        print(f"new_w2: {new_w2}")
-        new_w3 = bit_xor_operation(w3, new_w2)
-        print(f"new_w3: {new_w3}")
+        new_w3 = bit_xor_operation(original_w3, new_w2)
         return [new_w0, new_w1, new_w2, new_w3]
 
 
 if __name__ == "__main__":
-    def get_hex_msg(msg):
-        s1 = []
-        for a, b, c, d in msg:
-            s1 += [a, b, c, d]
-        s1 = [hex(x) for x in s1]
-        print(f"hex ark msg: {s1}")
-        return s1
+    from CommonMethod import get_hex_msg
 
     plain_text = [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
     original_key = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f]
@@ -187,17 +161,23 @@ if __name__ == "__main__":
 
     # ROUND 0
     key = group_input_text(original_key)
-    # print(f"ROUND 0 key: {get_hex_msg(key)}")
+    print(f"ROUND 0 key: {get_hex_msg(key)}")
     ark_msg = group_input_text(plain_text)
     ark_msg = obj.ARK(key=key, msg=ark_msg)
-    # print(f"ROUND 0 ark_msg: {get_hex_msg(ark_msg)}")
-    # print("*****************\n")
+    print(f"ROUND 0 ark_msg: {get_hex_msg(ark_msg)}")
+    print("*****************\n")
 
     # ROUND 1
     key = obj.KS(key=key, i=1)
     print(f"ROUND 1 key: {get_hex_msg(key)}")
-    # bs_msg = obj.BS(msg=ark_msg)
-    # print(f"ROUND 1 bs_msg: {bs_msg}")
+    bs_msg = obj.BS(msg=ark_msg)
+    print(f"ROUND 1 bs_msg: {get_hex_msg(bs_msg)}")
+    sr_msg = obj.SR(msg=bs_msg)
+    print(f"ROUND 1 sr_msg: {get_hex_msg(sr_msg)}")
+    mc_msg = obj.MC(msg=sr_msg)
+    print(f"ROUND 1 mc_msg: {get_hex_msg(mc_msg)}")
+    ark_msg = obj.ARK(key=key, msg=mc_msg)
+    print(f"ROUND 1 ark_msg: {get_hex_msg(ark_msg)}")
 
 
 

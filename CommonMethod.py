@@ -152,6 +152,19 @@ def nonzero_msb(value):
             return 9 - i
 
 
+def get_hex_msg(msg):
+    """
+    Get the hexadecimal format message list.
+    :param msg: [list] decimal format message list.
+    :return: [list] hexadecimal format message list.
+    """
+    new_msg = []
+    for a, b, c, d in msg:
+        new_msg += [a, b, c, d]
+    new_msg = [hex(x) for x in new_msg]
+    return new_msg
+
+
 if __name__ == "__main__":
     # text = "00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff"
     # print(group_input_text(text))
