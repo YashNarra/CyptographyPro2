@@ -152,16 +152,22 @@ def nonzero_msb(value):
             return 9 - i
 
 
-def get_hex_msg(msg):
+def get_other_format_msg(msg, _format="hex"):
     """
-    Get the hexadecimal format message list.
+    Get the hexadecimal or binary format message list.
     :param msg: [list] decimal format message list.
-    :return: [list] hexadecimal format message list.
+    :param _format: [str] "hex" or "bin", default is "hex".
+    :return: [list] hexadecimal or binary format message list.
     """
     new_msg = []
     for a, b, c, d in msg:
         new_msg += [a, b, c, d]
-    new_msg = [hex(x) for x in new_msg]
+    if _format == "hex":
+        new_msg = [hex(x) for x in new_msg]
+    elif _format == "bin":
+        new_msg = [bin(x) for x in new_msg]
+    else:
+        new_msg = [int(x) for x in new_msg]
     return new_msg
 
 
