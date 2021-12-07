@@ -29,7 +29,8 @@ class AES(object):
         return "AES 128 bit key, 10 rounds encryption system."
 
     def encryption(self):
-        key = self.KS(key=self.original_key, i=self.round)
+        # key = self.KS(key=self.original_key, i=self.round)
+        key = self.original_key
         ark_msg = self.ARK(key=key, msg=self.plain_text)
         self.keys.append([key])
         self.output.append([ark_msg])
@@ -132,15 +133,15 @@ class AES(object):
     def KS(self, key, i):
         print(f"key: {key}, i: {i}")
         m, n = len(key), len(key[0])
-        # Round 0 Key
-        if i == 0:
-            w = [[None for _ in range(n)] for _ in range(m)]
-            for j in range(m):
-                for k in range(n):
-                    w[j][k] = key[k][j]
-            w0, w1, w2, w3 = w[0], w[1], w[2], w[3]
-            print(f"Round 0 key: {[w0, w1, w2, w3]}\n")
-            return [w0, w1, w2, w3]
+        # # Round 0 Key
+        # if i == 0:
+        #     w = [[None for _ in range(n)] for _ in range(m)]
+        #     for j in range(m):
+        #         for k in range(n):
+        #             w[j][k] = key[k][j]
+        #     w0, w1, w2, w3 = w[0], w[1], w[2], w[3]
+        #     print(f"Round 0 key: {[w0, w1, w2, w3]}\n")
+        #     return [w0, w1, w2, w3]
 
         w0, w1, w2, w3 = key
         print(f"w0: {w0}, w1: {w1}, w2: {w2}, w3: {w3}")
@@ -167,7 +168,7 @@ if __name__ == "__main__":
     # original_key = "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f"
     plain_text = [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]
     original_key = [0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f]
-    print(f"plain_text: {plain_text}\noriginal_key: {original_key}\n")
+    print(f"plain_text: {group_input_text(plain_text)}\noriginal_key: {original_key}\n")
     obj = AES(original_key, plain_text)
     # print(obj.KS(key=group_input_text(original_key), i=1))
     ark_msg = obj.ARK(key=obj.KS(key=group_input_text(original_key), i=0), msg=group_input_text(plain_text))
